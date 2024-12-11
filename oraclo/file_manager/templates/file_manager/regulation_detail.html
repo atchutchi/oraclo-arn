@@ -1,0 +1,212 @@
+<!-- templates/file_manager/regulation_detail.html -->
+{% extends 'file_manager/base.html' %}
+{% load static %}
+
+{% block title %}{{ regulation.title }} - Regulamento{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'file_manager/css/regulation_detail.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho do Regulamento -->
+<div class="regulation-header mb-4">
+    <div class="row align-items-center">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'file_manager:regulation_list' %}">Regulamentos</a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ regulation.title }}</li>
+                </ol>
+            </nav>
+            <h2>
+                <i class="fas fa-gavel"></i> 
+                {{ regulation.title }}
+                <span class="badge bg-{{ regulation.status|lower }}">
+                    {{ regulation.get_status_display }}
+                </span>
+            </h2>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group">
+                {% if regulation.document %}
+                <a href="{% url 'file_manager:document_detail' regulation.document.pk %}" 
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-file-alt"></i> Ver Documento Original
+                </a>
+                {% endif %}
+                <button class="btn btn-warning" id="editRegulationBtn">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                {% if regulation.status == 'ACTIVE' %}
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#revokeModal">
+                    <i class="fas fa-ban"></i> Revogar
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informações Principais -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> Informações do Regulamento
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="regulation-info">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="text-muted">Tipo de Regulamento</label>
+                            <p class="mb-0">{{ regulation.get_regulation_type_display }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted">Data de Vigência</label>
+                            <p class="mb-0">{{ regulation.effective_date|date:"d/m/Y" }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted">Status Atual</label>
+                            <p class="mb-0">
+                                <span class="badge bg-{{ regulation.status|lower }}">
+                                    {{ regulation.get_status_display }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if regulation.document %}
+                    <div class="document-preview mt-4">
+                        <h6 class="border-bottom pb-2">Conteúdo do Documento</h6>
+                        <div class="document-content">
+                            {{ regulation.document.content|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Histórico de Alterações -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history"></i> Histórico de Alterações
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for entry in regulation_history %}
+                    <div class="timeline-item">
+                        <div class="timeline-date">
+                            {{ entry.date|date:"d/m/Y H:i" }}
+                        </div>
+                        <div class="timeline-content">
+                            <strong>{{ entry.action }}</strong>
+                            <p>{{ entry.description }}</p>
+                            <small class="text-muted">Por: {{ entry.user }}</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center">Nenhuma alteração registrada.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Metadados -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tags"></i> Metadados
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-6">Criado em</dt>
+                    <dd class="col-sm-6">{{ regulation.created_at|date:"d/m/Y" }}</dd>
+
+                    <dt class="col-sm-6">Última atualização</dt>
+                    <dd class="col-sm-6">{{ regulation.updated_at|date:"d/m/Y" }}</dd>
+
+                    {% if regulation.metadata %}
+                        {% for key, value in regulation.metadata.items %}
+                        <dt class="col-sm-6">{{ key|title }}</dt>
+                        <dd class="col-sm-6">{{ value }}</dd>
+                        {% endfor %}
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        <!-- Documentos Relacionados -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-link"></i> Documentos Relacionados
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for doc in related_documents %}
+                    <a href="{% url 'file_manager:document_detail' doc.pk %}" 
+                       class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ doc.title }}</h6>
+                            <small>{{ doc.created_at|date:"d/m/Y" }}</small>
+                        </div>
+                        <small class="text-muted">{{ doc.get_document_type_display }}</small>
+                    </a>
+                    {% empty %}
+                    <p class="text-muted text-center mb-0">Nenhum documento relacionado.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Revogação -->
+<div class="modal fade" id="revokeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Revogação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="revokeForm">
+                    {% csrf_token %}
+                    <p>Tem certeza que deseja revogar o regulamento "{{ regulation.title }}"?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Motivo da Revogação</label>
+                        <textarea class="form-control" name="revoke_reason" rows="3" required></textarea>
+                    </div>
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Esta ação não pode ser desfeita.
+                    </p>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmRevokeBtn">
+                    Confirmar Revogação
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'file_manager/js/regulation_detail.js' %}"></script>
+{% endblock %}

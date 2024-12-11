@@ -1,0 +1,161 @@
+<!-- templates/file_manager/category_detail.html -->
+{% extends 'file_manager/base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'file_manager/css/category_detail.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Informações da Categoria -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-folder"></i> {{ category.name }}
+                </h4>
+            </div>
+            <div class="card-body">
+                {% if category.description %}
+                <p class="card-text">{{ category.description }}</p>
+                {% endif %}
+                
+                <div class="category-meta">
+                    <p><strong>Criada em:</strong> {{ category.created_at|date:"d/m/Y" }}</p>
+                    {% if category.parent %}
+                    <p>
+                        <strong>Categoria Pai:</strong>
+                        <a href="{% url 'file_manager:category_detail' category.parent.pk %}">
+                            {{ category.parent.name }}
+                        </a>
+                    </p>
+                    {% endif %}
+                </div>
+
+                <div class="category-stats mt-3">
+                    <div class="row text-center">
+                        <div class="col">
+                            <h5>{{ category.document_set.count }}</h5>
+                            <small>Documentos</small>
+                        </div>
+                        <div class="col">
+                            <h5>{{ category.children.count }}</h5>
+                            <small>Subcategorias</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-warning" id="editCategoryBtn">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button class="btn btn-danger" id="deleteCategoryBtn">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+            </div>
+        </div>
+
+        <!-- Subcategorias -->
+        {% if category.children.exists %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-sitemap"></i> Subcategorias</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for subcategory in category.children.all %}
+                    <a href="{% url 'file_manager:category_detail' subcategory.pk %}" 
+                       class="list-group-item list-group-item-action">
+                        {{ subcategory.name }}
+                        <span class="badge bg-info float-end">
+                            {{ subcategory.document_set.count }} docs
+                        </span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Lista de Documentos -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-file"></i> Documentos</h5>
+                    <a href="{% url 'file_manager:document_upload' %}?category={{ category.pk }}" 
+                       class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Adicionar Documento
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="documents-list">
+                    {% for document in documents %}
+                    <div class="document-item">
+                        <div class="document-info">
+                            <h5>
+                                <i class="fas fa-file-{{ document.document_type|lower }}"></i>
+                                {{ document.title }}
+                            </h5>
+                            <p class="mb-1">{{ document.content|truncatewords:30 }}</p>
+                            <small class="text-muted">
+                                Adicionado em {{ document.created_at|date:"d/m/Y" }}
+                            </small>
+                        </div>
+                        <div class="document-actions">
+                            <a href="{% url 'file_manager:document_detail' document.pk %}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'file_manager:document_delete' document.pk %}" 
+                               class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center">
+                        Nenhum documento nesta categoria.
+                    </p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir a categoria <strong>{{ category.name }}</strong>?</p>
+                <p class="text-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Esta ação não pode ser desfeita e afetará todos os documentos associados.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{% url 'file_manager:category_delete' category.pk %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'file_manager/js/category_detail.js' %}"></script>
+{% endblock %}

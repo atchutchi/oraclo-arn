@@ -1,0 +1,207 @@
+<!-- templates/file_manager/regulation_list.html -->
+{% extends 'file_manager/base.html' %}
+{% load static %}
+
+{% block title %}Regulamentos{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'file_manager/css/regulation.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>
+            <i class="fas fa-gavel"></i> Regulamentos
+        </h2>
+    </div>
+    <div class="col-auto">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#regulationModal">
+            <i class="fas fa-plus"></i> Novo Regulamento
+        </button>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Tipo</label>
+                <select name="type" class="form-select">
+                    <option value="">Todos os tipos</option>
+                    {% for type, label in regulation_types %}
+                    <option value="{{ type }}" {% if request.GET.type == type %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">Todos os status</option>
+                    {% for status, label in regulation_statuses %}
+                    <option value="{{ status }}" {% if request.GET.status == status %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Pesquisar</label>
+                <input type="text" name="q" class="form-control" value="{{ request.GET.q }}" 
+                       placeholder="Pesquisar regulamentos...">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Regulamentos -->
+<div class="regulation-timeline">
+    {% for regulation in regulations %}
+    <div class="regulation-item">
+        <div class="regulation-date">
+            {{ regulation.effective_date|date:"d/m/Y" }}
+        </div>
+        <div class="regulation-content">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ regulation.title }}</h5>
+                    <span class="badge bg-{{ regulation.status|lower }}">
+                        {{ regulation.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="regulation-meta">
+                        <span class="regulation-type">
+                            <i class="fas fa-bookmark"></i> {{ regulation.get_regulation_type_display }}
+                        </span>
+                        {% if regulation.document %}
+                        <span class="regulation-document">
+                            <i class="fas fa-file"></i> 
+                            <a href="{% url 'file_manager:document_detail' regulation.document.pk %}">
+                                Documento Original
+                            </a>
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="regulation-actions mt-3">
+                        <a href="{% url 'file_manager:regulation_detail' regulation.pk %}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> Ver Detalhes
+                        </a>
+                        <button class="btn btn-sm btn-warning edit-regulation" 
+                                data-regulation-id="{{ regulation.pk }}">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        {% if regulation.status == 'ACTIVE' %}
+                        <button class="btn btn-sm btn-danger revoke-regulation" 
+                                data-regulation-id="{{ regulation.pk }}">
+                            <i class="fas fa-ban"></i> Revogar
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-5">
+        <img src="{% static 'file_manager/images/empty-regulations.svg' %}" 
+             alt="Sem regulamentos" class="empty-illustration">
+        <p class="text-muted mt-3">Nenhum regulamento encontrado.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal para Criar/Editar Regulamento -->
+<div class="modal fade" id="regulationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="regulationModalTitle">Novo Regulamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="regulationForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="regulationId" name="regulation_id">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Título</label>
+                            <input type="text" class="form-control" id="regulationTitle" 
+                                   name="title" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select" id="regulationType" name="type" required>
+                                {% for type, label in regulation_types %}
+                                <option value="{{ type }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Data de Vigência</label>
+                            <input type="date" class="form-control" id="regulationEffectiveDate" 
+                                   name="effective_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Documento Base</label>
+                            <select class="form-select" id="regulationDocument" name="document">
+                                <option value="">Selecione um documento...</option>
+                                {% for doc in documents %}
+                                <option value="{{ doc.pk }}">{{ doc.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="saveRegulationBtn">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Revogação -->
+<div class="modal fade" id="revokeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Revogação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja revogar este regulamento?</p>
+                <p class="text-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Esta ação mudará o status do regulamento para "Revogado".
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmRevokeBtn">
+                    Confirmar Revogação
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'file_manager/js/regulation.js' %}"></script>
+{% endblock %}

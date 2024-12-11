@@ -1,0 +1,109 @@
+<!-- templates/file_manager/category_list.html -->
+{% extends 'file_manager/base.html' %}
+{% load static %}
+
+{% block title %}Categorias{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'file_manager/css/category.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>
+            <i class="fas fa-folder"></i> Categorias
+        </h2>
+    </div>
+    <div class="col-auto">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
+            <i class="fas fa-plus"></i> Nova Categoria
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    {% for category in categories %}
+    <div class="col-md-4 mb-4">
+        <div class="card category-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    {% if category.parent %}
+                    <small class="text-muted">{{ category.parent.name }} /</small>
+                    {% endif %}
+                    {{ category.name }}
+                </h5>
+                <p class="card-text">{{ category.description|truncatewords:30 }}</p>
+                <div class="category-stats">
+                    <span class="badge bg-info">
+                        <i class="fas fa-file"></i> {{ category.document_set.count }} documentos
+                    </span>
+                    {% if category.children.exists %}
+                    <span class="badge bg-secondary">
+                        <i class="fas fa-folder"></i> {{ category.children.count }} subcategorias
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'file_manager:category_detail' category.pk %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-eye"></i> Ver Detalhes
+                </a>
+                <button class="btn btn-sm btn-warning edit-category" data-category-id="{{ category.pk }}">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Nenhuma categoria cadastrada.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal para Criar/Editar Categoria -->
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="categoryModalTitle">Nova Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="categoryId" name="category_id">
+                    <div class="mb-3">
+                        <label class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="categoryName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea class="form-control" id="categoryDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Categoria Pai</label>
+                        <select class="form-select" id="categoryParent" name="parent">
+                            <option value="">Nenhuma</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.pk }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="saveCategoryBtn">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'file_manager/js/category.js' %}"></script>
+{% endblock %}
