@@ -4,12 +4,15 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
-from langchain.text_splitters import RecursiveCharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.chat_models import ChatOpenAI
+# Atualizando importações do LangChain
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
-from langchain.vectorstores import SQLAlchemyVectorStore
 
+# Resto das importações permanecem iguais
 from docling.document_converter import DocumentConverter
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import (
@@ -203,25 +206,18 @@ class DocumentProcessor:
         return processed_documents
 
     def setup_qa_chain(self, documents: List[Document]) -> ConversationalRetrievalChain:
-        """
-        Configura uma chain de pergunta e resposta para os documentos processados.
-        """
-        # Criar vetor store com os embeddings dos documentos
-        vectorstore = SQLAlchemyVectorStore(
-            self.embeddings,
-            connection_string=settings.DATABASE_URL,
-            documents_table="file_manager_documentembedding",
-            embeddings_table="file_manager_documentembedding_vectors"
-        )
-        
+        # Criar vetor store com FAISS
+        vectorstore = FAISS.from_documents(documents, self.embeddings)
+
         # Configurar chain de QA
         qa_chain = ConversationalRetrievalChain.from_llm(
             llm=self.llm,
             retriever=vectorstore.as_retriever(),
             return_source_documents=True
         )
-        
+
         return qa_chain
+
 
     def classify_regulation(self, document: Document) -> Optional[Regulation]:
         """

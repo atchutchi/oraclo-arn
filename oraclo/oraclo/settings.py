@@ -28,7 +28,10 @@ SECRET_KEY = 'django-insecure-49dd*c56@1$4!j%mnojl5)v81ns6&+&=@0o9*^21c7j3e9(pbz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['8000-atchutchi-oracloarn-dzs1tyozn3m.ws-eu117.gitpod.io',]
+ALLOWED_HOSTS = [
+    '8000-atchutchi-oracloarn-dzs1tyozn3m.ws-eu117.gitpod.io',
+    '.gitpod.io',
+    ]
 
 
 # Application definition
@@ -151,7 +154,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
-    BASE_DIR / 'file_manager' / 'static',  # Atualizado para o caminho correto
+    BASE_DIR / 'file_manager' / 'static',
 ]
 
 # Media files
