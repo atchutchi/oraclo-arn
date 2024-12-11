@@ -1,0 +1,166 @@
+<!-- templates/file_manager/document_detail.html -->
+{% extends 'file_manager/base.html' %}
+{% load static %}
+
+{% block title %}{{ document.title }}{% endblock %}
+
+{% block extra_css %}
+<!-- CSS específico para a página de detalhes -->
+<link href="{% static 'css/document_detail.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<!-- ID do documento para uso no JavaScript -->
+<input type="hidden" id="documentId" value="{{ document.id }}">
+
+<div class="row">
+    <!-- Coluna principal - Informações do documento -->
+    <div class="col-md-8">
+        <!-- Card de informações principais -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>
+                    <img src="{% static 'images/icons/'|add:document.document_type|add:'.png' %}" 
+                         alt="{{ document.get_document_type_display }}" 
+                         class="document-type-icon">
+                    {{ document.title }}
+                    <small class="text-muted float-end">
+                        {{ document.get_document_type_display }}
+                    </small>
+                </h3>
+            </div>
+            <div class="card-body">
+                <!-- Detalhes do documento -->
+                <div class="mb-4">
+                    <h5 class="border-bottom pb-2">
+                        <i class="fas fa-info-circle"></i> Detalhes do Documento
+                    </h5>
+                    <table class="table table-hover">
+                        <tr>
+                            <th width="150">Status:</th>
+                            <td>
+                                <span class="badge bg-{{ document.status|lower }}">
+                                    {{ document.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Criado em:</th>
+                            <td>{{ document.created_at|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Atualizado em:</th>
+                            <td>{{ document.updated_at|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% if file_info %}
+                        <tr>
+                            <th>Tamanho:</th>
+                            <td>{{ file_info.size|filesizeformat }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tipo MIME:</th>
+                            <td>{{ file_info.mime_type }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+
+                <!-- Conteúdo do documento -->
+                {% if document.content %}
+                <div class="mb-4">
+                    <h5 class="border-bottom pb-2">
+                        <i class="fas fa-align-left"></i> Conteúdo
+                    </h5>
+                    <div class="document-content">
+                        {{ document.content|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Regulamentos relacionados -->
+        {% if regulations %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>
+                    <img src="{% static 'images/icons/regulation.png' %}" alt="Regulamentos" class="section-icon">
+                    Regulamentos Relacionados
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="regulation-list">
+                    {% for regulation in regulations %}
+                    <div class="regulation-item">
+                        <h6>{{ regulation.title }}</h6>
+                        <p class="mb-0">
+                            <small class="text-muted">
+                                {{ regulation.get_regulation_type_display }} - 
+                                Vigente desde: {{ regulation.effective_date|date:"d/m/Y" }}
+                            </small>
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Coluna lateral - Ações e metadados -->
+    <div class="col-md-4">
+        <!-- Card de ações -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-cogs"></i> Ações</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if document.file_path %}
+                    <a href="{{ document.file_path }}" class="btn btn-primary" target="_blank">
+                        <i class="fas fa-download"></i> Baixar Documento
+                    </a>
+                    {% endif %}
+                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#chatModal">
+                        <i class="fas fa-comments"></i> Consultar Documento
+                    </button>
+                    <a href="{% url 'file_manager:document_delete' document.pk %}" 
+                       class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Excluir Documento
+                    </a>
+                    <a href="{% url 'file_manager:document_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card de metadados -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-tags"></i> Metadados</h5>
+            </div>
+            <div class="card-body">
+                {% if document.metadata %}
+                <dl class="metadata-list">
+                    {% for key, value in document.metadata.items %}
+                    <dt>{{ key|title }}</dt>
+                    <dd>{{ value }}</dd>
+                    {% endfor %}
+                </dl>
+                {% else %}
+                <p class="text-muted">Nenhum metadado disponível</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Chat -->
+{% include 'file_manager/includes/chat_modal.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- JS específico para a página de detalhes -->
+<script src="{% static 'js/document_detail.js' %}"></script>
+{% endblock %}

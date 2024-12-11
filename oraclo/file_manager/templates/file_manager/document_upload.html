@@ -1,0 +1,80 @@
+<!-- templates/file_manager/document_upload.html -->
+{% extends 'file_manager/base.html' %}
+{% load static %}
+
+{% block title %}Upload de Documento{% endblock %}
+
+{% block extra_css %}
+<!-- CSS específico para a página de upload -->
+<link href="{% static 'css/document_upload.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <!-- Card principal do formulário de upload -->
+        <div class="card upload-card">
+            <div class="card-header">
+                <h3>
+                    <img src="{% static 'images/icons/upload.png' %}" alt="Upload" class="header-icon">
+                    Upload de Documento
+                </h3>
+            </div>
+            <div class="card-body">
+                <!-- Área de drag and drop -->
+                <div class="drop-zone mb-4" id="dropZone">
+                    <div class="drop-zone-prompt">
+                        <img src="{% static 'images/icons/drag-drop.png' %}" alt="Drag and Drop" class="drop-icon">
+                        <p>Arraste e solte arquivos aqui ou clique para selecionar</p>
+                    </div>
+                </div>
+
+                <!-- Formulário de upload -->
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ field.label }}
+                            {% if field.field.required %}
+                                <span class="required-asterisk">*</span>
+                            {% endif %}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                        <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% if field.errors %}
+                        <div class="alert alert-danger mt-2">
+                            {{ field.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Barra de progresso do upload -->
+                    <div class="progress mb-3 d-none" id="uploadProgress">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Botões de ação -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitButton">
+                            <i class="fas fa-upload"></i> Enviar Documento
+                        </button>
+                        <a href="{% url 'file_manager:document_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- JS específico para a funcionalidade de upload -->
+<script src="{% static 'js/document_upload.js' %}"></script>
+{% endblock %}

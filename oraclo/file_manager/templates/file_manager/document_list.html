@@ -1,0 +1,121 @@
+<!-- templates/file_manager/document_list.html -->
+{% extends 'file_manager/base.html' %}
+{% load static %}
+
+{% block title %}Documentos{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/document_list.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>
+            <img src="{% static 'images/icons/documents.png' %}" alt="Documentos" class="icon-header">
+            Documentos
+        </h2>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'file_manager:document_upload' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Novo Documento
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            {{ search_form.as_p }}
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Pesquisar
+                </button>
+                <a href="{% url 'file_manager:document_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-undo"></i> Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Documentos -->
+<div class="row">
+    {% for document in documents %}
+    <div class="col-md-6 mb-4">
+        <div class="card document-card h-100">
+            <div class="card-header">
+                <img src="{% static 'images/icons/'|add:document.document_type|add:'.png' %}" 
+                     alt="{{ document.get_document_type_display }}" 
+                     class="document-type-icon">
+                {{ document.title }}
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar"></i> {{ document.created_at|date:"d/m/Y H:i" }}
+                    </small>
+                </p>
+                <p class="card-text">
+                    <span class="badge bg-info">{{ document.get_document_type_display }}</span>
+                    <span class="badge bg-{{ document.status|lower }}">
+                        {{ document.get_status_display }}
+                    </span>
+                </p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'file_manager:document_detail' document.pk %}" 
+                   class="btn btn-sm btn-primary">
+                    <i class="fas fa-eye"></i> Ver Detalhes
+                </a>
+                <a href="{% url 'file_manager:document_delete' document.pk %}" 
+                   class="btn btn-sm btn-danger float-end">
+                    <i class="fas fa-trash"></i> Excluir
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col">
+        <div class="alert alert-info">
+            <img src="{% static 'images/icons/empty.png' %}" alt="Sem documentos" class="empty-icon">
+            Nenhum documento encontrado.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Paginação -->
+{% if is_paginated %}
+<nav aria-label="Navegação de páginas">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                <i class="fas fa-chevron-left"></i> Anterior
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+        </li>
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                Próximo <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/document_list.js' %}"></script>
+{% endblock %}
