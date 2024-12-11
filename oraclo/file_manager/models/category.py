@@ -1,4 +1,8 @@
 # file_manager/models/category.py
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from .base import TimeStampedModel
+
 class DocumentCategory(TimeStampedModel):
     """
     Modelo para categorização de documentos.

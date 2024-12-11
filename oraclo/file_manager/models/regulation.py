@@ -1,4 +1,9 @@
 # file_manager/models/regulation.py
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from .base import TimeStampedModel
+from .document import Document
+
 class Regulation(TimeStampedModel):
     """
     Modelo para documentos regulatórios específicos do setor de telecomunicações.
@@ -48,3 +53,6 @@ class Regulation(TimeStampedModel):
         verbose_name = _('Regulamento')
         verbose_name_plural = _('Regulamentos')
         ordering = ['-effective_date']
+
+    def __str__(self):
+        return self.title

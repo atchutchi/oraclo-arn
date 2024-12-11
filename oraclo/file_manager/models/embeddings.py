@@ -1,4 +1,9 @@
 # file_manager/models/embeddings.py
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from .base import TimeStampedModel
+from .document import Document
+
 class DocumentEmbedding(TimeStampedModel):
     """
     Modelo para armazenar embeddings de documentos.
