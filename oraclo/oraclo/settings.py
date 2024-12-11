@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import openai
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -39,6 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    #app
+    'file_manager',
 ]
 
 MIDDLEWARE = [
@@ -77,6 +81,24 @@ WSGI_APPLICATION = 'oraclo.wsgi.application'
 
 # Carregar variáveis do ficheiro .env
 load_dotenv()
+
+# Configurar a chave da API
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def generate_text(prompt):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",  # Melhor modelo disponível
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=500,  # Ajusta conforme necessário
+            temperature=0.7,
+        )
+        return response['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
 
 DATABASES = {
     'default': {
@@ -125,7 +147,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
+# Adicionar ao settings.py
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
