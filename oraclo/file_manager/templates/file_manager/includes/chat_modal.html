@@ -1,0 +1,38 @@
+<!-- templates/file_manager/includes/chat_modal.html -->
+<div class="modal fade" id="chatModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-robot text-primary me-2"></i>
+                    Assistente IA
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Área de chat -->
+                <div class="chat-container mb-3" id="chatContainer">
+                    <div class="chat-message assistant">
+                        <div class="message-content">
+                            <p>Olá! Sou o assistente IA do ORACLO. Como posso ajudar hoje?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Área de input -->
+                <form id="chatForm" class="chat-input-form">
+                    <div class="input-group">
+                        <input type="text" 
+                               class="form-control" 
+                               id="chatInput" 
+                               placeholder="Digite sua pergunta..."
+                               required>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

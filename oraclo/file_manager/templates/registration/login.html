@@ -1,0 +1,82 @@
+<!-- file_manager/templates/registration/login.html -->
+{% extends 'file_manager/base.html' %}
+{% load static %}
+
+{% block title %}Iniciar Sessão - ORACLO{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'file_manager/css/login.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="card login-card">
+                    <div class="card-body text-center">
+                        <div class="login-header">
+                            <img src="{% static 'file_manager/images/logo.png' %}" 
+                                 alt="ORACLO" class="login-logo">
+                            <h4 class="mb-4">Iniciar Sessão</h4>
+                        </div>
+                        
+                        <form method="post" action="{% url 'login' %}" id="loginForm">
+                            {% csrf_token %}
+                            
+                            {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle"></i>
+                                Nome de utilizador ou palavra-passe incorretos.
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" name="username" 
+                                           class="form-control" 
+                                           placeholder="Nome de utilizador"
+                                           required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input type="password" name="password" 
+                                           class="form-control" 
+                                           placeholder="Palavra-passe"
+                                           required>
+                                </div>
+                            </div>
+                            
+                            <input type="hidden" name="next" value="{{ next }}">
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-login">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Entrar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="text-center text-white mt-3">
+                    <p class="mb-0">ORACLO - Sistema de Gestão Documental</p>
+                    <small>Autoridade Reguladora Nacional das TICs</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'file_manager/js/login.js' %}"></script>
+{% endblock %}

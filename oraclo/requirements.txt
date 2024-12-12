@@ -10,7 +10,7 @@ deepsearch-glm==1.0.0
 distro==1.9.0
 Django==5.1.4
 djangorestframework==3.15.2
-docling==2.10.0
+docling==2.11.0
 docling-core==2.9.0
 docling-ibm-models==2.0.8
 docling-parse==3.0.0

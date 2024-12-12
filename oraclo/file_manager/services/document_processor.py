@@ -1,18 +1,22 @@
 # file_manager/services/document_processor.py
+
 import hashlib
 import logging
+import json
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
-# Atualizando importações do LangChain
+# Importações do LangChain atualizadas
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
 from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferMemory
 
-# Resto das importações permanecem iguais
+# Importações do Docling
 from docling.document_converter import DocumentConverter
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import (
@@ -29,43 +33,38 @@ from ..models import Document, DocumentEmbedding, DocumentCategory, Regulation
 logger = logging.getLogger(__name__)
 
 class DocumentProcessor:
-    """
-    Processador de documentos que integra Docling e LangChain para extrair,
-    processar e indexar conteúdo de diferentes tipos de documentos.
-    """
-
     def __init__(self):
-        """
-        Inicializa o processador de documentos com as configurações necessárias.
-        """
         self.doc_converter = self._setup_document_converter()
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
-            chunk_overlap=200
+            chunk_overlap=200,
+            length_function=len,
+            add_start_index=True
         )
         self.embeddings = OpenAIEmbeddings(
-            api_key=settings.OPENAI_API_KEY
+            api_key=settings.OPENAI_API_KEY,
+            model="text-embedding-ada-002"
         )
         self.llm = ChatOpenAI(
             model_name="gpt-4",
-            temperature=0,
+            temperature=0.7,
             api_key=settings.OPENAI_API_KEY
+        )
+        self.memory = ConversationBufferMemory(
+            memory_key="chat_history",
+            return_messages=True
         )
 
     def _setup_document_converter(self) -> DocumentConverter:
-        """
-        Configura o conversor de documentos do Docling com as opções apropriadas.
-        """
-        # Configuração para PDF com OCR
-        pdf_options = PdfPipelineOptions()
-        pdf_options.do_ocr = True
-        pdf_options.do_table_structure = True
-        pdf_options.generate_page_images = True
-        pdf_options.images_scale = 2.0
-        
-        # Configurar diferentes opções de OCR
-        pdf_options.ocr_options = TesseractOcrOptions(
-            force_full_page_ocr=True
+        pdf_options = PdfPipelineOptions(
+            do_ocr=True,
+            do_table_structure=True,
+            generate_page_images=True,
+            images_scale=2.0,
+            ocr_options=TesseractOcrOptions(
+                force_full_page_ocr=True,
+                language='por'
+            )
         )
 
         return DocumentConverter(
@@ -74,14 +73,12 @@ class DocumentProcessor:
                 InputFormat.DOCX,
                 InputFormat.IMAGE,
                 InputFormat.HTML,
-                InputFormat.TXT
-            ]
+                'txt'
+            ],
+            pdf_options=pdf_options
         )
 
     def _calculate_file_hash(self, file_path: str) -> str:
-        """
-        Calcula o hash SHA-256 de um arquivo.
-        """
         sha256_hash = hashlib.sha256()
         with open(file_path, "rb") as f:
             for byte_block in iter(lambda: f.read(4096), b""):
@@ -89,9 +86,6 @@ class DocumentProcessor:
         return sha256_hash.hexdigest()
 
     def _detect_document_type(self, file_path: str) -> Document.DocumentType:
-        """
-        Detecta o tipo do documento baseado na extensão do arquivo.
-        """
         ext = Path(file_path).suffix.lower()
         type_mapping = {
             '.pdf': Document.DocumentType.PDF,
@@ -105,17 +99,13 @@ class DocumentProcessor:
         return type_mapping.get(ext, Document.DocumentType.OTHER)
 
     def _extract_metadata(self, doc_content: Any) -> Dict[str, Any]:
-        """
-        Extrai metadados do documento processado.
-        """
         metadata = {
             'num_pages': getattr(doc_content, 'num_pages', 1),
             'has_images': False,
             'has_tables': False,
-            'language': 'pt'  # Implementar detecção de idioma se necessário
+            'language': 'pt'
         }
 
-        # Adicionar lógica específica para diferentes tipos de documentos
         if hasattr(doc_content, 'images'):
             metadata['has_images'] = True
             metadata['num_images'] = len(doc_content.images)
@@ -128,27 +118,14 @@ class DocumentProcessor:
 
     @transaction.atomic
     def process_document(self, file_path: str, title: Optional[str] = None) -> Document:
-        """
-        Processa um documento, extraindo seu conteúdo e criando embeddings.
-        
-        Args:
-            file_path: Caminho do arquivo a ser processado
-            title: Título opcional do documento
-            
-        Returns:
-            Document: Instância do modelo Document processado
-        """
         try:
-            # Verificar existência do arquivo
             if not Path(file_path).exists():
                 raise FileNotFoundError(f"Arquivo não encontrado: {file_path}")
 
-            # Calcular hash e verificar duplicidade
             file_hash = self._calculate_file_hash(file_path)
             if Document.objects.filter(file_hash=file_hash).exists():
                 raise ValueError(f"Documento já processado anteriormente: {file_path}")
 
-            # Criar registro inicial do documento
             document = Document.objects.create(
                 title=title or Path(file_path).name,
                 file_path=file_path,
@@ -157,17 +134,12 @@ class DocumentProcessor:
                 file_hash=file_hash
             )
 
-            # Processar o documento com Docling
             conversion_result = self.doc_converter.convert(file_path)
-            
-            # Extrair conteúdo e metadados
             content = conversion_result.document.export_to_markdown()
             metadata = self._extract_metadata(conversion_result.document)
             
-            # Dividir o conteúdo em chunks para processamento
             text_chunks = self.text_splitter.split_text(content)
             
-            # Gerar embeddings
             for chunk in text_chunks:
                 embedding_vector = self.embeddings.embed_query(chunk)
                 DocumentEmbedding.objects.create(
@@ -176,7 +148,6 @@ class DocumentProcessor:
                     model_name="text-embedding-ada-002"
                 )
 
-            # Atualizar documento com conteúdo processado
             document.content = content
             document.metadata = metadata
             document.status = Document.DocumentStatus.PROCESSED
@@ -193,9 +164,6 @@ class DocumentProcessor:
             raise
 
     def process_batch(self, file_paths: List[str]) -> List[Document]:
-        """
-        Processa um lote de documentos.
-        """
         processed_documents = []
         for file_path in file_paths:
             try:
@@ -206,34 +174,66 @@ class DocumentProcessor:
         return processed_documents
 
     def setup_qa_chain(self, documents: List[Document]) -> ConversationalRetrievalChain:
-        # Criar vetor store com FAISS
-        vectorstore = FAISS.from_documents(documents, self.embeddings)
+        documents_texts = []
+        for doc in documents:
+            if doc.content:
+                chunks = self.text_splitter.split_text(doc.content)
+                documents_texts.extend(chunks)
 
-        # Configurar chain de QA
+        vectorstore = FAISS.from_texts(
+            documents_texts,
+            self.embeddings,
+            metadatas=[{"source": f"doc_{i}"} for i in range(len(documents_texts))]
+        )
+
         qa_chain = ConversationalRetrievalChain.from_llm(
             llm=self.llm,
-            retriever=vectorstore.as_retriever(),
-            return_source_documents=True
+            retriever=vectorstore.as_retriever(
+                search_type="mmr",
+                search_kwargs={
+                    "k": 5,
+                    "fetch_k": 10
+                }
+            ),
+            memory=self.memory,
+            return_source_documents=True,
+            verbose=True
         )
 
         return qa_chain
 
-
     def classify_regulation(self, document: Document) -> Optional[Regulation]:
-        """
-        Classifica um documento como regulamentação se apropriado.
-        """
-        # Implementar lógica de classificação usando LLM
-        prompt = f"""
-        Analise o seguinte documento e determine se é um documento regulatório do setor de telecomunicações.
-        Se for, extraia as informações relevantes.
-        
-        Documento: {document.content[:1000]}...
-        """
-        
-        response = self.llm.predict(prompt)
-        
-        # Processar a resposta e criar Regulation se apropriado
-        # (Implementar lógica específica baseada nas necessidades)
-        
-        return None  # Ou retornar instância de Regulation
+        try:
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", """Você é um especialista em análise de regulamentos do setor de telecomunicações.
+                Analise o documento e extraia:
+                1. Tipo de regulamento
+                2. Escopo de aplicação
+                3. Data de vigência
+                4. Principais disposições
+                5. Relação com outros regulamentos
+                
+                Retorne a análise em formato JSON."""),
+                ("human", f"Documento: {document.content[:2000]}...")
+            ])
+
+            response = self.llm.invoke(prompt)
+            
+            try:
+                analysis = json.loads(response.content)
+                if analysis.get('is_regulation'):
+                    return Regulation.objects.create(
+                        title=analysis.get('title'),
+                        regulation_type=analysis.get('type'),
+                        document=document,
+                        effective_date=analysis.get('effective_date'),
+                        status='ACTIVE'
+                    )
+            except json.JSONDecodeError:
+                logger.error(f"Erro ao processar resposta da IA para documento {document.id}")
+                
+            return None
+
+        except Exception as e:
+            logger.error(f"Erro ao classificar regulamento: {str(e)}")
+            return None

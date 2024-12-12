@@ -1,0 +1,119 @@
+<!-- templates/file_manager/home.html -->
+{% extends 'file_manager/base.html' %}
+{% load static %}
+
+{% block title %}Início{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'file_manager/css/home.css' %}" rel="stylesheet">
+<link href="{% static 'file_manager/css/chat.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4 mb-4">Bem-vindo ao ORACLO</h1>
+        <p class="lead mb-4">Sistema Inteligente de Gestão Documental para a Autoridade Reguladora Nacional das TICs</p>
+        <a href="{% url 'file_manager:document_upload' %}" class="btn btn-light btn-lg me-2">
+            <i class="fas fa-upload"></i> Upload de Documento
+        </a>
+        <button class="btn btn-outline-light btn-lg" data-bs-toggle="modal" data-bs-target="#chatModal">
+            <i class="fas fa-robot"></i> Consultar IA
+        </button>
+    </div>
+</section>
+
+<!-- Quick Stats -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card stats-card text-center mb-4">
+                    <div class="card-body">
+                        <i class="fas fa-file-alt feature-icon"></i>
+                        <h3 class="card-title">{{ document_count }}</h3>
+                        <p class="card-text">Documentos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card text-center mb-4">
+                    <div class="card-body">
+                        <i class="fas fa-folder feature-icon"></i>
+                        <h3 class="card-title">{{ category_count }}</h3>
+                        <p class="card-text">Categorias</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card text-center mb-4">
+                    <div class="card-body">
+                        <i class="fas fa-gavel feature-icon"></i>
+                        <h3 class="card-title">{{ regulation_count }}</h3>
+                        <p class="card-text">Regulamentos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card text-center mb-4">
+                    <div class="card-body">
+                        <i class="fas fa-clock feature-icon"></i>
+                        <h3 class="card-title">{{ recent_count }}</h3>
+                        <p class="card-text">Recentes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section com Chat Modal -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Recursos Principais</h2>
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 cursor-pointer" data-bs-toggle="modal" data-bs-target="#chatModal">
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-robot feature-icon"></i>
+                        </div>
+                        <h5 class="card-title text-center">IA Assistente</h5>
+                        <p class="card-text">Utilize nossa IA para análise inteligente de documentos e auxílio na tomada de decisões.</p>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-primary">
+                                <i class="fas fa-comments me-2"></i>Iniciar Chat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ... outros cards de recursos ... -->
+        </div>
+    </div>
+</section>
+
+<!-- Chat Modal -->
+{% include 'file_manager/includes/chat_modal.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'file_manager/js/chat.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicialização do chat
+    const chatButtons = document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#chatModal"]');
+    chatButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Inicializar o chat quando o modal for aberto
+            const chatModal = document.getElementById('chatModal');
+            if (chatModal) {
+                const chatContainer = chatModal.querySelector('.chat-container');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

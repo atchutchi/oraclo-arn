@@ -28,10 +28,20 @@ SECRET_KEY = 'django-insecure-49dd*c56@1$4!j%mnojl5)v81ns6&+&=@0o9*^21c7j3e9(pbz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.gitpod.io',
+    'https://*.ws-eu117.gitpod.io'
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+
 ALLOWED_HOSTS = [
+    '*',
     '8000-atchutchi-oracloarn-dzs1tyozn3m.ws-eu117.gitpod.io',
     '.gitpod.io',
-    ]
+]
 
 
 # Application definition
@@ -63,7 +73,9 @@ ROOT_URLCONF = 'oraclo.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / 'file_manager' / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -105,15 +117,10 @@ def generate_text(prompt):
 
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('DB_ENGINE'),
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 
 # Password validation
@@ -165,3 +172,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'file_manager:home'
+LOGOUT_REDIRECT_URL = 'login'

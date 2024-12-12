@@ -19,19 +19,16 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import HttpResponse
-
-# Função simples para a página inicial
-def home(request):
-    return HttpResponse("<h1>Bem-vindo ao Oraclo!</h1><p>Use os links acima para navegar.</p>")
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('file-manager/', include('file_manager.urls')),  # Inclui as URLs do app file_manager
-    path('', home, name='home'),  # Página inicial
+    path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('file-manager/', include('file_manager.urls')),  # Mantendo o prefixo file-manager
+    path('', include('file_manager.urls')),  # Também incluindo na raiz
 ]
 
-# Adicionar URLs para servir arquivos de mídia em desenvolvimento
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
